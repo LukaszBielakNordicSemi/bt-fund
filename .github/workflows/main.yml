@@ -1,0 +1,32 @@
+name: All 
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk:
+        description: 'NCS SDK branch'     
+        required: true
+        default: 'v2.9-branch'
+      toolchain:
+        description: 'Toolchain version'     
+        required: true
+        default: 'v2.9.0'
+jobs:
+  build:
+    strategy:
+      max-parallel: 20
+      matrix:
+          board: [nrf7002dk/nrf5340/cpuapp, nrf7002dk/nrf5340/cpuapp/ns, nrf54l15dk/nrf54l15/cpuapp, nrf54l15dk/nrf54l15/cpuapp/ns, nrf52dk/nrf52832, nrf52840dk/nrf52840, nrf5340dk/nrf5340/cpuapp, nrf5340dk/nrf5340/cpuapp/ns, nrf52833dk/nrf52833 ]
+          project: [l2/l2_e1_sol, l2/l2_e2_sol, l2/l2_e3_sol,l3/l3_e2_sol, l3/l3_e2_sol, l4/l4_e1_sol, l4/l4_e2_sol, l4/l4_e3_sol, l5/l5_e1_sol/,l5/l5_e2_sol/, l6/l6_e1_sol/, l6/l6_e2_sol/, l6/l6_e3_sol/]
+              
+          
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: image build
+      run: |
+          docker build -t nordicplayground/nrfconnect-sdk:${{ inputs.sdk }} \
+            --build-arg sdk_nrf_branch=${{ inputs.sdk }}  \
+            --build-arg toolchain_version=${{ inputs.toolchain }}  \
+    - name: build sample
+      run: docker run  --rm -v ${PWD}:/workdir/project -w /workdir/project/v2.9.0-v2.7.0 nordicplayground/nrfconnect-sdk:${{ inputs.sdk }}   west build -c ${{ matrix.project }} -b ${{ matrix.board }} --build-dir ${{ matrix.project }}/build
